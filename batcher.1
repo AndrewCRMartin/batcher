@@ -1,0 +1,264 @@
+.ad l
+.nh
+.TH display 1 "26 September 1994" "Batcher"
+.SH NAME
+batcher - Create a repetitive file
+.SH SYNOPSIS
+.B "batcher" [ \fIoptions\fP ...] \fIfile\fP
+.SH DESCRIPTION
+\fBbatcher\fP is a simple command language for creating repetitive batch 
+files, etc. Each command is introduced by a | character and variables 
+may also be created using this character. The language has only 9 
+basic commands:
+.PP
+
+.B   |SARRAY
+.B   |SET
+.B   |INC
+.B   |DEC
+.B   |STEP
+.B   |REPEAT
+.B   |FORMAT
+.B   |FILE
+.B   |END
+.B   |EXIT
+.PP
+and two associated commands
+.PP
+.B   |STRING
+.B   |NUMBER
+.PP
+   The simplest of these is the 
+.B |REPEAT |END 
+pair. 
+.B |REPEAT 
+is followed
+by a variable name and two values. This is formally equvalent to the
+DO loop of FORTRAN or the for() loop of C. The 
+.B |END 
+command ends the
+set of lines to be repeated. Note that 
+.B |REPEAT |END 
+pairs may \fInot\fP be nested.
+.SH EXAMPLES
+The following simple example uses
+.B |REPEAT
+to count from 1 to 5
+
+   |REPEAT |I 1 5
+   $WRITE SYS$OUTPUT "Hello |I "
+   |END
+   |EXIT
+   
+This would create a VAX DCL batch file thus:
+
+   $WRITE SYS$OUTPUT "Hello 1"
+   $WRITE SYS$OUTPUT "Hello 2"
+   $WRITE SYS$OUTPUT "Hello 3"
+   $WRITE SYS$OUTPUT "Hello 4"
+   $WRITE SYS$OUTPUT "Hello 5"
+.PP   
+   Had the 
+.B |STEP 
+command been issued before the 
+.B |REPEAT 
+command, the 
+variable would have been incremented by this value. The effect of 
+.B |STEP 
+is removed once the 
+.B |END 
+command is found. For example:
+
+   |STEP 2
+   |REPEAT |I 1 5
+   $WRITE SYS$OUTPUT "Hello |I "
+   |END
+   |EXIT
+
+would create a VAX DCL batch file thus:
+
+   $WRITE SYS$OUTPUT "Hello 1"
+   $WRITE SYS$OUTPUT "Hello 3"
+   $WRITE SYS$OUTPUT "Hello 5"
+.PP   
+   The alternative to the 
+.B |REPEAT |END 
+pair is the 
+.B |FILE |END 
+pair. 
+The effect of this is similar except that variables are read from
+a file and the construct is repeated until the file ends. Before 
+using 
+.B |FILE |END,
+the 
+.B |FORMAT 
+command must be given to describe the
+format of a line in the file and associate values with variables
+
+For example:
+
+   |FORMAT |STRING |A |NUMBER |B |NUMBER |C
+
+would expect each line of the file to contain a string followed by two
+numbers. These would be assigned to the variables 
+.B |A, |B 
+and 
+.B |C
+respectively.
+.PP
+Suppose a file exists called "batch.dat" as follows:
+
+   A 53 2
+   B 47 5
+   C 20 15
+
+The following commands would be used to create a batch file:
+
+   |FORMAT |STRING |A |NUMBER |B |NUMBER |C
+   |FILE batch.dat
+   $WRITE sys$output "String|A  Values |B , |C "
+   |END
+   |EXIT
+
+This would result in the following batch file:
+
+   $WRITE sys$output "StringA Values 53, 2"
+   $WRITE sys$output "StringB Values 47, 5"
+   $WRITE sys$output "StringC Values 20, 15"
+.PP   
+The 
+.B |SARRAY 
+command is used to create a string array:
+
+   |SARRAY |MyArray
+   Hello
+   Goodbye World!
+   |END
+
+Items in the array are numbered from 1 and accessed with a number or 
+numeric variable:
+
+   |MyArray |a
+   |MyArray 2
+
+.PP   
+Below is the contents of batch.inp, a demonstration input file.
+   ================Cut Here==============
+   ======================================
+     Demonstration input file for batch 
+   ======================================
+   
+   Any lines which have no vertical line will be copied to 
+   the output file exactly as they are.
+   
+   Run this demo by typing:
+   batch -ibatch.inp batch.out
+   
+   You also need to have the file batch.dat available (see
+   below).
+   
+   We can create an array of strings thus:
+   |sarray |a
+   Hello
+   Goodbye
+   |end
+   Those lines will not go to the output file.
+   
+   Next we can create a group of lines to be repeated.
+   The first of this set of lines will echo the number of 
+   times round the loop. The second will echo the 
+   appropriate string from the array created above.
+   |repeat |b 1 2
+   This is loop cycle |b
+   I'm going to say: |a |b
+   |end
+   
+   We can also create and manipulate variables directly:
+   |set |c 1
+   |c
+   |inc |c
+   |c
+   |dec |c
+   |c
+   |set |c 10
+   |c
+   
+   Let's echo the variables from the string array again:
+   |a 1  |a 2
+   Note that to get a space between these two words in the 
+   output, we had to place *two* spaces in the input file. 
+   This is always the case as the first space is eaten by 
+   the command interpreter in defining the variable name. 
+   This, of course, lets us follow something immediately 
+   without a space. For example:
+   |step 2
+   |repeat |d 1 10
+   file|d .dat
+   |end
+   This example also illustrates the command to set the 
+   step size.
+   
+   Finally the file parsing option.
+   First we need to create a template:
+   |format |string |e |number |f |number |g
+   Now specify a file loop with something to write:
+   |file batch.dat
+   String|e  Values |f ,|g
+   |end
+   |exit
+   
+   Below is the contents of batch.dat
+   ================Cut Here==============
+   A 53 2
+   B 47 5
+   C 20 15
+   ================Cut Here==============
+.SH OPTIONS
+.B -i\fIfilename\fP
+Specify an input filename
+.SH NOTES
+1. The file must end with a 
+.B |EXIT 
+command - anything after that will be ignored.
+
+2. Each variable \fImust\fP be followed by a space. This space will be 
+removed in the resulting output string. Thus, if you wish a space to 
+appear, you must place 2 spaces in the command line.
+   
+.SH BUGS
+1. Commands are (currently) not allowed within 
+.B |FILE 
+or 
+.B |REPEAT 
+loops, so you can't put in 
+.B |INC's 
+or 
+.B |DEC's.
+
+2. Consequently, loops cannot be nested.
+(1. and 2. may sometime be fixed by making the commandline 
+stuff recursive...)
+
+3. Variable names are limited to 19 characters.
+
+
+.SH COPYRIGHT
+Copyright 1990-1994 Dr. Andrew C.R. Martin, SciTech Software
+.PP
+Permission to use, copy, modify, distribute, and sell this software and
+its documentation for any purpose is hereby granted without fee,
+provided that the above copyright notice appear in all copies and that
+both that copyright notice and this permission notice appear in
+supporting documentation. Dr. Martin makes no representations
+about the suitability of this software for any purpose.  It is provided
+"as is" without express or implied warranty.
+.PP
+Dr. Martin disclaims all warranties with regard
+to this software, including all implied warranties of merchantability
+and fitness, in no event shall Dr. Martin be
+liable for any special, indirect or consequential damages or any
+damages whatsoever resulting from loss of use, data or profits, whether
+in an action of contract, negligence or other tortious action, arising
+out of or in connection with the use or performance of this software.
+.SH AUTHORS
+Dr. Andrew C.R. Martin, SciTech Software.
