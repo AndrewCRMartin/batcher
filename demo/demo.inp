@@ -1,0 +1,72 @@
+   =======================================================================
+                     Demonstration input file for batch 
+   =======================================================================
+   
+   Any lines which have no vertical line will be copied to the output file
+   exactly as they are.
+   
+   Run this demo by typing:
+      batch -ibatch.inp batch.out
+   
+   You also need to have the file batch.dat available.
+   
+   We can create an array of strings thus:
+   |sarray |a
+   Hello
+   Goodbye
+   |end
+   Those lines will not go to the output file.
+   
+   Next we can create a group of lines to be repeated.
+   The first of this set of lines will echo the number of times round the 
+   loop. The second will echo the appropriate string from the array 
+   created above.
+   |repeat |b 1 2
+   This is loop cycle |b
+   I'm going to say: |a |b
+   |end
+   
+   We can also create and manipulate variables directly:
+   |set |c 1
+   |c
+   |inc |c
+   |c
+   |dec |c
+   |c
+   |set |c 10
+   |c
+   
+   Let's echo the variables from the string array again:
+   |a 1  |a 2
+   Note that to get a space between these two words in the output, we 
+   had to place *two* spaces in the input file. This is always the case 
+   as the first space is eaten by the command interpreter in defining 
+   the variable name. This, of course, lets us follow something 
+   immediately without a space. For example:
+   |step 2
+   |repeat |d 1 10
+   file|d .dat
+   |end
+   This example also illustrates the command to set the step size.
+   
+   Finally the file parsing option.
+   First we need to create a template:
+   |format |string |e |number |f |number |g
+   Now specify a file loop with something to write:
+   |file batch.dat
+   String|e  Values |f ,|g
+   |end
+   |exit
+   
+   Notes:
+   1. The file must end with a |exit command---anything after that will 
+   be ignored.
+   2. Commands are (currently) not allowed within |FILE or |REPEAT loops,
+   so you can't put in |INC's or |DEC's.
+   3. Consequently, loops cannot be nested.
+   (2. and 3. will be fixed by making the commandline stuff recursive...)
+   4. Variable names may be upto 19 characters long
+   5. Each variable *MUST* be followed by a space. This space will be 
+   removed in the resulting output string. Thus, if you wish a space to 
+   appear, you must place 2 spaces in the command line.
+   
